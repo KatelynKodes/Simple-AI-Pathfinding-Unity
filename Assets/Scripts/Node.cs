@@ -6,9 +6,21 @@ public class Node
 {
     private bool _isWalkable;
     private Vector3 _worldPosition;
+    private int _gridPosX, _gridPosY;
     private float _gScore;
     private float _hScore;
-    private float _fScore;
+    private List<Node> _neighbors;
+
+
+    /// <summary>
+    /// The nodes position in relation to the grid
+    /// </summary>
+    public int GridPosX { get { return _gridPosX; } set { _gridPosX = value; } }
+
+    /// <summary>
+    /// The nodes position in relation to the grid
+    /// </summary>
+    public int GridPosY { get { return _gridPosY; } set { _gridPosY = value; } }
 
     /// <summary>
     /// Determines if the node is able to be walked through
@@ -34,6 +46,11 @@ public class Node
     /// The position of the node
     /// </summary>
     public Vector3 WorldPos { get { return _worldPosition; } }
+
+    /// <summary>
+    /// The neighbors of the node
+    /// </summary>
+    public List<Node> Neighbors { get { return _neighbors; } set { _neighbors = value; } }
 
     /// <summary>
     /// The base constructor for a node
