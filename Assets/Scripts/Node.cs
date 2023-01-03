@@ -2,6 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public struct NeighborNode
+{
+    public Node target;
+}
+
 public class Node
 {
     private bool _isWalkable;
@@ -9,7 +15,8 @@ public class Node
     private int _gridPosX, _gridPosY;
     private float _gScore;
     private float _hScore;
-    private List<Node> _neighbors;
+    private Node _previous;
+    private List<NeighborNode> _neighbors = new List<NeighborNode>();
 
 
     /// <summary>
@@ -48,9 +55,14 @@ public class Node
     public Vector3 WorldPos { get { return _worldPosition; } }
 
     /// <summary>
+    /// The node previous to this node
+    /// </summary>
+    public Node PreviousNode { get { return _previous; } set { _previous = value; } }
+
+    /// <summary>
     /// The neighbors of the node
     /// </summary>
-    public List<Node> Neighbors { get { return _neighbors; } set { _neighbors = value; } }
+    public List<NeighborNode> Neighbors { get { return _neighbors; } set { _neighbors = value; } }
 
     /// <summary>
     /// The base constructor for a node
@@ -61,5 +73,16 @@ public class Node
     {
         _isWalkable = walkable;
         _worldPosition = worldPos;
+    }
+
+    /// <summary>
+    /// Adds a neighbor node to the neighbor list
+    /// </summary>
+    /// <param name="node">The node being added to the list</param>
+    public void AddNeighborNode(Node node)
+    {
+        NeighborNode neighbor = new NeighborNode { };
+        neighbor.target = node;
+        _neighbors.Add(neighbor);
     }
 }

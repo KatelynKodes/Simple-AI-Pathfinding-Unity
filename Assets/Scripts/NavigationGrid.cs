@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -8,7 +9,7 @@ using UnityEngine.Rendering.VirtualTexturing;
 public class NavigationGrid : MonoBehaviour
 {
     [SerializeField]
-    private Vector3 _position;
+    private Vector3 _gridPosition;
     [SerializeField]
     private Vector2Int _gridSize;
     [SerializeField]
@@ -87,15 +88,35 @@ public class NavigationGrid : MonoBehaviour
                 return ConstructPath(startNode, TargetNode);
 
             //For every neighbor of the current node
-            for (int i = 1; i < currentNode.Neighbors.Count; i++)
+            foreach (NeighborNode neighbor in currentNode.Neighbors)
             {
                 //If the current node's neighbor is walkable
-                if (currentNode.Neighbors[i].IsWalkable)
+                if (neighbor.target.IsWalkable)
                 {
                     //and isn't included in the closed list
-                    if (!ClosedList.Contains(currentNode.Neighbors[i]))
+                    if (!ClosedList.Contains(neighbor.target))
                     {
-                        
+                        //This is the cost of the movement, aka the Gscore
+                        int movementCost = (int)currentNode.GScore + DistanceBetweenNodes(currentNode, neighbor.target);
+
+                        //If the open list doesn't contain the neighbor or if the neighbor's gscore
+                        //is less than the movement cost
+                        if (!OpenList.Contains(neighbor.target) || neighbor.target.GScore < movementCost)
+                        {
+                            //Set the neighbprs gscore to the movement cost
+                            neighbor.target.GScore = movementCost;
+                            //Calculate the hscore
+                            neighbor.target.HScore = DistanceBetweenNodes(neighbor.target, TargetNode);
+                            //Set the neighbors previous node to be the current node
+                            neighbor.target.PreviousNode = currentNode;
+
+                            //if the openlist does not contain the neighbor
+                            if (!OpenList.Contains(neighbor.target))
+                            {
+                                //Add it
+                                OpenList.Add(neighbor.target);
+                            }
+                        }
                     }
                 }
             }
@@ -112,8 +133,6 @@ public class NavigationGrid : MonoBehaviour
     /// <param name="GridSizeY"> The Y size of the grid </param>
     private void setNodeNeighbors(Node Node, int GridSizeX, int GridSizeY)
     {
-        List<Node> NeighborList = new List<Node>();
-
         //Search a 3 by 3 grid around the current node
         for (int i = -1; i <= 1; i++)
         {
@@ -129,17 +148,80 @@ public class NavigationGrid : MonoBehaviour
 
                     //If the x and y are both greater than or equal to 0 and less than the grid size
                     if ((checkX >= 0 && checkX < GridSizeX) && (checkY >= 0 && checkY < GridSizeY))
-                        NeighborList.Add(_nodeGrid[checkX, checkY]);
+                        Node.AddNeighborNode(_nodeGrid[checkX, checkY]);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the distance between two nodes
+    /// </summary>
+    /// <param name="startingNode">The starting node</param>
+    /// <param name="endingNode">The ending node</param>
+    /// <returns>integer</returns>
+    private int DistanceBetweenNodes(Node startingNode, Node endingNode)
+    {
+        return (int)Math.Abs(Math.Sqrt(startingNode.GridPosX - endingNode.GridPosX) +
+            Math.Sqrt(startingNode.GridPosY - endingNode.GridPosY));
+    }
+
+    /// <summary>
+    /// Constructs the path from the end node to the starting node
+    /// </summary>
+    /// <param name="startNode"></param>
+    /// <param name="endNode"></param>
+    /// <returns></returns>
+    private List<Node> ConstructPath(Node startNode, Node endNode)
+    {
+        List<Node> path = new List<Node>();
+        Node currentNode = endNode;
+
+        //While the current node is not the start's previous
+        while (currentNode != startNode.PreviousNode)
+        {
+            //Insert the current node at the first index
+            path.Insert(0, currentNode);
+
+            //set the current node to the current node's previous
+            currentNode = currentNode.PreviousNode;
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// Gets a node according to it's grid position
+    /// </summary>
+    /// <param name="gridX">grid position x</param>
+    /// <param name="gridY">grid position y</param>
+    /// <returns>Node object</returns>
+    public Node GetNode(int gridX, int gridY)
+    {
+        return _nodeGrid[gridX, gridY];
+    }
+
+    /// <summary>
+    /// Grabs a node based on it's world position
+    /// </summary>
+    /// <param name="worldPos">the world position being checked</param>
+    /// <returns>a Node</returns>
+    public Node GetNode(Vector3 worldPos)
+    {
+        Node node = null;
+
+        for (int i = 0; i < _gridSize.x; i++)
+        {
+            for (int j = 0; j < _gridSize.y; j++)
+            {
+                if (_nodeGrid[i, j].WorldPos == worldPos)
+                {
+                    node = _nodeGrid[i, j];
                 }
             }
         }
 
-        Node.Neighbors = NeighborList;
-    }
-
-    private List<Node> ConstructPath(Node startNode, Node endNode)
-    {
-        return new List<Node>();
+        return node;
     }
 
     private void OnDrawGizmos()
